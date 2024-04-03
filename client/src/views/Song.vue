@@ -85,7 +85,7 @@ export default {
 
 <template>
   <div>
-    <div class="flex flex-row justify-center gap-2 mt-2 mx-8 sticky top-2">
+    <div class="flex flex-row justify-center gap-2 mt-2 mx-8 sticky top-2 z-[10]">
       <input type="text" class="border border-black rounded-lg py-1 px-2 flex-1 hover:drop-shadow-xl"
              placeholder="Search a song name or artist" v-model="searchInput">
       <router-link class="p-1 bg-white border border-black rounded-md" :to="{name: 'editor', params:{song: 'add'}}">Add

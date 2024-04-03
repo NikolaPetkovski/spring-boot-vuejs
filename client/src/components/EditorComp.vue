@@ -13,19 +13,12 @@ export default {
       song: {},
       artist: {},
       version: 0,
-      genres: ['1a', 'a2', 'a3']
+      genres: ['1a', 'a2', 'a3'],
+      confirmDelete: false,
     }
   },
   validations() {
     return {
-      /*
-      song: {
-        title: {required, alpha, minLength: minLength(2), maxLength: maxLength(30)},
-        artist: {required, alpha, minLength: minLength(2), maxLength: maxLength(30)},
-        length: {required, minLength: minLength(3), maxLength: maxLength(5), lengthRegex}
-      }
-       */
-
       song: {
         title: {required, minLength: minLength(2), maxLength: maxLength(30)},
         length: {required}
@@ -47,17 +40,24 @@ export default {
     }
     axios.get('http://localhost:8080/api/artist').then(response => {
       this.artist = response.data._embedded.artist
-      console.log(this.artist)
+      //console.log(this.artist)
     })
+
+    if (!this.song.artist && this.artist.length > 0) {
+      this.song.artist = this.artist[0]._links.self.href;
+    }
   },
   methods: {
     handleFileUpload(event) {
-      let reader = new FileReader()
-      reader.readAsDataURL(event.target.files[0])
-      reader.onload = (event) => {
-        this.song.musicData = event.target.files[0]
+      const reader = new FileReader()
+
+      reader.onload = () => {
+        this.song.data = reader.result
       }
-      console.log(this.musicData)
+
+      if (event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0])
+      }
     },
     updateSong() {
       this.v$.$validate()
@@ -90,6 +90,10 @@ export default {
           console.log(error);
         });
       }
+    },
+    deleteMusicData() {
+      this.song.data = null
+      this.confirmDelete = false
     }
   }
 }
@@ -104,7 +108,7 @@ export default {
         <div v-if="v$.song.title.$error">{{ v$.song.title.$errors[0].$message }}</div>
 
         <!-- Artist -->
-        <select v-if="song.artist" v-model="song.artist" required>
+        <select class="border" v-model="song.artist" required>
           <option v-for="(item,index) in this.artist" :key="index" :value="item._links.self.href">{{
               item.name
             }}
@@ -119,13 +123,39 @@ export default {
         <input class="border p-1" type="text" placeholder="length" v-model="song.length">
         <div v-if="v$.song.length.$error">{{ v$.song.length.$errors[0].$message }}</div>
       </div>
+
       <div class="flex flex-col gap-4">
-        <input type="file" class="cursor-pointer w-fit border h-fit" accept=".wav,.mp3" id="upload"
+        <input type="file" class="hidden" accept=".wav,.mp3,.mpeg,.m4a" id="upload"
                @change="handleFileUpload">
+        <label for="upload" class="cursor-pointer w-fit border h-fit">Song hochladen</label>
+        <div v-show="this.song.data" class="flex flex-col gap-4">
+          <audio :src="this.song.data" controls v-show="this.song.data !== null">
+          </audio>
+          <div>
+            <button v-if="this.song.data !== null && !confirmDelete" class="cursor-pointer w-fit border h-fit"
+                    @click="confirmDelete = true">Song
+              löschen
+            </button>
+
+            <div class="flex flex-col gap-2">
+              <p v-show="confirmDelete">Willst du die Song Data wirklich löschen?</p>
+              <div class="flex flex-row justify-around">
+                <button v-if="this.confirmDelete" class="cursor-pointer w-fit border h-fit"
+                        @click="this.confirmDelete = false">
+                  Nein
+                </button>
+                <button v-if="this.confirmDelete" class="cursor-pointer w-fit border h-fit"
+                        @click="deleteMusicData">Ja
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
     </div>
     <button class="border p-1" :class="{'cursor-not-allowed' : !v$.$pending && v$.$error}"
-            :disabled="!v$.$pending && v$.$error" @click="updateSong">
+            :disabled="!v$.$pending && v$.$error && song.artist === null" @click="updateSong">
       Speichern
     </button>
 

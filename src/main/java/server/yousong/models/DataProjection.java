@@ -6,8 +6,5 @@ import java.util.Set;
 
 @Projection(name = "data", types = Song.class)
 public interface DataProjection {
-
     String getData();
-
-
 }
